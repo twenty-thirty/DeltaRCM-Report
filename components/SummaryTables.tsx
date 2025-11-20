@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Claim, CodeType, ReimbursementRate } from '../types';
 import { formatMoney } from '../utils/parser';
@@ -7,13 +6,20 @@ import { CreditCard, Calculator, AlertTriangle, Info, Activity } from 'lucide-re
 
 // --- Component: AQL Summary Table ---
 
+interface AQLStats {
+  units: number;
+  paid: number;
+  unpaid: number;
+  amount: number;
+}
+
 interface AQLSummaryProps {
   claims: Claim[];
 }
 
 export const AQLSummaryTable: React.FC<AQLSummaryProps> = ({ claims }) => {
   const data = useMemo(() => {
-    const summary = {
+    const summary: Record<string, AQLStats> = {
       A: { units: 0, paid: 0, unpaid: 0, amount: 0 },
       Q: { units: 0, paid: 0, unpaid: 0, amount: 0 },
       L: { units: 0, paid: 0, unpaid: 0, amount: 0 },
@@ -269,11 +275,18 @@ interface DenialAnalyticsProps {
   providerName: string;
 }
 
+interface DenialStat {
+  units: number;
+  charges: number;
+  projected: number;
+  codes: Record<string, number>;
+}
+
 export const DenialAnalyticsTable: React.FC<DenialAnalyticsProps> = ({ claims, providerName }) => {
   const rates = useMemo(() => calculateReimbursementRates(claims), [claims]);
   
   const analytics = useMemo(() => {
-    const map: Record<string, { units: number, charges: number, projected: number, codes: Record<string, number> }> = {};
+    const map: Record<string, DenialStat> = {};
     
     claims.filter(c => !c.isPaid).forEach(c => {
       if (!map[c.payer]) map[c.payer] = { units: 0, charges: 0, projected: 0, codes: {} };
@@ -314,7 +327,7 @@ export const DenialAnalyticsTable: React.FC<DenialAnalyticsProps> = ({ claims, p
               {sortedPayers.map(payer => {
                 const row = analytics[payer];
                 const topCodes = Object.entries(row.codes)
-                  .sort((a, b) => b[1] - a[1])
+                  .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
                   .slice(0, 5)
                   .map(([code, count]) => `${code} (${count})`)
                   .join(', ');
